@@ -208,29 +208,29 @@ void clearWhiteSpace()
 bool idIsReservedWord(string in)
 {
 	return ((in.substr(0, 1) == "Q" && in.size() == 1) ||
-			(in.substr(0, 5) == "SIGMA" && in.size() == 5) ||
-			(in.substr(0, 5) == "DELTA" && in.size() == 5) ||
-			(in == "START_STATE") ||
-			(in.substr(0, 1) == "F" && in.size() == 1) ||
-			(in.substr(0, 1) == "=" && in.size() == 1) ||
-			(in.substr(0, 1) == "{" && in.size() == 1) || 
-			(in.substr(0, 1) == "}" && in.size() == 1) || 
-			(in.substr(0, 1) == ";" && in.size() == 1) ||
-			(in.substr(0, 1) == "(" && in.size() == 1) || 
-			(in.substr(0, 1) == ")" && in.size() == 1));
+		(in.substr(0, 5) == "SIGMA" && in.size() == 5) ||
+		(in.substr(0, 5) == "DELTA" && in.size() == 5) ||
+		(in == "START_STATE") ||
+		(in.substr(0, 1) == "F" && in.size() == 1) ||
+		(in.substr(0, 1) == "=" && in.size() == 1) ||
+		(in.substr(0, 1) == "{" && in.size() == 1) || 
+		(in.substr(0, 1) == "}" && in.size() == 1) || 
+		(in.substr(0, 1) == ";" && in.size() == 1) ||
+		(in.substr(0, 1) == "(" && in.size() == 1) || 
+		(in.substr(0, 1) == ")" && in.size() == 1));
 }
 
 bool shouldStop(int i)
 {
 	return (dfaDef[i] == '}' || dfaDef[i] == ';' ||
-			dfaDef[i] == ',' || dfaDef[i] == ')' ||
-			i == dfaDef.size());
+		dfaDef[i] == ',' || dfaDef[i] == ')' ||
+		i == dfaDef.size());
 }
 
 string expect(string expected)
 {
-	cout << "now expecting " << expected << endl << endl;
-	cout << dfaDef << endl << endl;
+	cout << "now expecting " << expected << endl;
+	cout << dfaDef << endl;
 	if (expected == "ID_OR_NUM")
 	{
 		if (idIsReservedWord(dfaDef.substr(0, 11)))
@@ -303,39 +303,38 @@ int find(vector<string> list, string str)
 int main()
 {
 	//read dfa.txt
-    fstream newfile;
-    newfile.open("dfa.txt", ios::in);
-    if (newfile.is_open()) 
-    {
+    	fstream newfile;
+    	newfile.open("dfa.txt", ios::in);
+    	if (newfile.is_open()) 
+    	{
 		//concatenate each line of dfa.txt to dfaDef, ignoring all newlines in text file
-        string line;
-        while (getline(newfile, line)) 
-        {
-            dfaDef += line;
-        }
+        	string line;
+        	while (getline(newfile, line)) 
+        	{
+            		dfaDef += line;
+        	}
 		clearWhiteSpace(); //remove spaces and tabs
-
+		
 		parse_dfa();
 		/*
-		* parse dfa according to the CFG G (V, SIGMA, R, S)
-		* where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
-		*		SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
-		*		R = {
-		* 
-		*		dfa			-> q sigma delta start_state f,
-		*		q			-> Q EQUAL LBRACE list LBRACE SEMICOLON,
-		*		sigma		-> SIGMA EQUAL LBRACE list RBRACE SEMICOLON,
-		*		delta		-> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON,
-		*		start_state	-> START_STATE EQUAL primary SEMICOLON,
-		*		f			-> F EQUAL LBRACE list RBRACE SEMICOLON,
-		*		list		-> primary COMMA list || primary,
-		*		transitions	-> transiton COMMA transitions || transition,
-		*		transition	-> DELTA LPAREN primary COMMA,
-		*		primary		-> ID || NUM }
-		* 
-		*		S = dfa
-		*/
-    }
+		 * parse dfa according to the CFG G (V, SIGMA, R, S)
+		 * where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
+		 *	 SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
+		 *	 R = {
+		 * 
+		 *	 dfa		-> q sigma delta start_state f,
+		 *	 q		-> Q EQUAL LBRACE list LBRACE SEMICOLON,
+		 *	 sigma		-> SIGMA EQUAL LBRACE list RBRACE SEMICOLON,
+		 *	 delta		-> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON,
+		 *	 start_state	-> START_STATE EQUAL primary SEMICOLON,
+		 *	 f		-> F EQUAL LBRACE list RBRACE SEMICOLON,
+		 *	 list		-> primary COMMA list || primary,
+		 *	 transitions	-> transiton COMMA transitions || transition,
+		 *	 transition	-> DELTA LPAREN primary COMMA,
+		 *	 primary	-> ID || NUM }
+		 *       S = dfa
+		 */
+    	}
 	cout <<  endl << "Q = ";
 	showAllStates();
 }
