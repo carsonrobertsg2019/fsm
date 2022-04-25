@@ -1,5 +1,11 @@
 # fsm
-The program parses a text file by first reading in the file line by line and concatenating each line to a global string variable. It then removes all space and tab characters from the resultant string, and then it "expects" terminals one by one until the entire input text is parsed. It does this according to the given Context Free Grammar below. If it expects a terminal and does not see a matching one, it prints SYNTAX ERROR !.
+The program parses a text file by first reading in the file line by line and concatenating each line to a global string variable. It then removes all space and tab characters from the resultant string, and then it "expects" terminals one by one until the entire input text is parsed. It does this according to the given Context Free Grammar below. If it expects a terminal and does not see a matching one, it prints SYNTAX ERROR !. 
+
+Additionally, while parsing, the program keeps track of all states mentioned in the definition of Q. If in the definitions of delta, start_state, or F, there is mentioned at least 1 state that is not in Q, the program also prints SYNTAX ERROR!. 
+
+Similarly, while parsing sigma, the program keeps track of all inputs mentioned in the definition of sigma. If in the delta function there is mentioned at least 1 input that is not in sigma, the program prints SYNTAX ERROR !. 
+
+Lastly, if delta, the transition function, does not allow the input DFA to be deterministic, (i.e. if there arent enough transitions defined, or if the program has multiple transitions for the same input from the same state.)
 
 Let CFG G (V, SIGMA, R, S)
 
@@ -415,5 +421,138 @@ now expecting }
 now expecting ;
 
 DELTA={DELTA(q0,0)=q0,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1};START_STATE=q0;F={q0};
+
+SYNTAX ERROR !
+
+here is a case where a state not in Q is mentioned in delta:
+Q = {q0, q1};
+
+SIGMA = {0, 1};
+
+DELTA = 
+
+{
+
+	DELTA(q0, 0) = q2, 
+	
+	DELTA(q0, 1) = q1, 
+	
+	DELTA(q1, 0) = q0, 
+	
+	DELTA(q1, 1) = q1,
+	
+};
+
+START_STATE = q0;
+
+F = {q0};
+
+now expecting Q
+
+Q={q0,q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting =
+
+={q0,q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting {
+
+{q0,q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+q0,q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ,
+
+,q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+q1};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting }
+
+};SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ;
+
+;SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting SIGMA
+
+SIGMA={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting =
+
+={0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting {
+
+{0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+0,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ,
+
+,1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+1};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting }
+
+};DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ;
+
+;DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting DELTA
+
+DELTA={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting =
+
+={DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting {
+
+{DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting DELTA
+
+DELTA(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting (
+
+(q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+q0,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ,
+
+,0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+0)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting )
+
+)=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting =
+
+=q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
+
+now expecting ID_OR_NUM
+
+q2,DELTA(q0,1)=q1,DELTA(q1,0)=q0,DELTA(q1,1)=q1,};START_STATE=q0;F={q0};
 
 SYNTAX ERROR !
