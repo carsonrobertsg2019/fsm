@@ -19,6 +19,13 @@ vector<string> inputAlphabet;
  * mentioned in delta
  */
 
+struct statesXinputNode
+{
+	string stateName;
+	string input;
+};
+vector<statesXinputNode*> statesXinput;
+
 struct transitionNode
 {
 	string transitionStateName;
@@ -98,6 +105,16 @@ void parse_sigma()
 void parse_delta()
 {
 	//delta -> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON
+	for (int i = 0; i < states.size(); i++)
+	{
+		for (int j = 0; j < inputAlphabet.size(); j++)
+		{
+			statesXinputNode* newNode = new statesXinputNode;
+			newNode->stateName = states[i];
+			newNode->input = inputAlphabet[j];
+			statesXinput.push_back(newNode);
+		}
+	}
 	expect("DELTA");
 	expect("=");
 	expect("{");
@@ -167,19 +184,53 @@ void parse_transitions()
 		expect(",");
 		parse_transitions();
 	}
+	if (!statesXinput.empty())
+	{
+		syntax_error();
+	}
+}
+
+struct pairToRemoveTemp
+{
+	string stateNameToRemove;
+	string inputToRemove;
+};
+
+void validateDeltaInput(pairToRemoveTemp* temp)
+{
+	bool syntaxError = true;
+	for (int i = 0; i < statesXinput.size(); i++)
+	{
+		if (statesXinput[i]->stateName == temp->stateNameToRemove && statesXinput[i]->input == temp->inputToRemove)
+		{
+			syntaxError = false;
+			statesXinput.erase(statesXinput.begin() + i);
+		}
+	}
+	if (syntaxError)
+	{
+		syntax_error();
+	}
 }
 
 void parse_transition()
 {
+	pairToRemoveTemp* temp = new pairToRemoveTemp;
+	string str;
+
 	//transition->DELTA LPAREN primary COMMA,
 	expect("DELTA");
 	expect("(");
-	if (find(states, parse_primary()) == -1)
+	str = parse_primary();
+	temp->stateNameToRemove = str;
+	if (find(states, str) == -1)
 	{
 		syntax_error();
 	}
 	expect(",");
-	if (find(inputAlphabet, parse_primary()) == -1)
+	str = parse_primary();
+	temp->inputToRemove = str;
+	if (find(inputAlphabet, str) == -1)
 	{
 		syntax_error();
 	}
@@ -189,6 +240,8 @@ void parse_transition()
 	{
 		syntax_error();
 	}
+
+	validateDeltaInput(temp);
 }
 
 string parse_primary()
@@ -303,38 +356,39 @@ int find(vector<string> list, string str)
 int main()
 {
 	//read dfa.txt
-    	fstream newfile;
-    	newfile.open("dfa.txt", ios::in);
-    	if (newfile.is_open()) 
-    	{
+    fstream newfile;
+    newfile.open("dfa.txt", ios::in);
+    if (newfile.is_open()) 
+    {
 		//concatenate each line of dfa.txt to dfaDef, ignoring all newlines in text file
-        	string line;
-        	while (getline(newfile, line)) 
-        	{
-            		dfaDef += line;
-        	}
+        string line;
+        while (getline(newfile, line)) 
+        {
+            dfaDef += line;
+        }
 		clearWhiteSpace(); //remove spaces and tabs
-		
+
 		parse_dfa();
 		/*
-		 * parse dfa according to the CFG G (V, SIGMA, R, S)
-		 * where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
-		 *	 SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
-		 *	 R = {
-		 * 
-		 *	 dfa		-> q sigma delta start_state f,
-		 *	 q		-> Q EQUAL LBRACE list LBRACE SEMICOLON,
-		 *	 sigma		-> SIGMA EQUAL LBRACE list RBRACE SEMICOLON,
-		 *	 delta		-> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON,
-		 *	 start_state	-> START_STATE EQUAL primary SEMICOLON,
-		 *	 f		-> F EQUAL LBRACE list RBRACE SEMICOLON,
-		 *	 list		-> primary COMMA list || primary,
-		 *	 transitions	-> transiton COMMA transitions || transition,
-		 *	 transition	-> DELTA LPAREN primary COMMA,
-		 *	 primary	-> ID || NUM }
-		 *       S = dfa
-		 */
-    	}
+		* parse dfa according to the CFG G (V, SIGMA, R, S)
+		* where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
+		*		SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
+		*		R = {
+		* 
+		*		dfa		-> q sigma delta start_state f,
+		*		q		-> Q EQUAL LBRACE list LBRACE SEMICOLON,
+		*		sigma		-> SIGMA EQUAL LBRACE list RBRACE SEMICOLON,
+		*		delta		-> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON,
+		*		start_state	-> START_STATE EQUAL primary SEMICOLON,
+		*		f		-> F EQUAL LBRACE list RBRACE SEMICOLON,
+		*		list		-> primary COMMA list || primary,
+		*		transitions	-> transiton COMMA transitions || transition,
+		*		transition	-> DELTA LPAREN primary COMMA,
+		*		primary		-> ID || NUM }
+		* 
+		*		S = dfa
+		*/
+    }
 	cout <<  endl << "Q = ";
 	showAllStates();
 }
