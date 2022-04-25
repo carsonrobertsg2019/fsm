@@ -4,6 +4,7 @@ To make this more readable, switch to the source blob. The rendered blob ruins t
 The program parses a text file by first reading in the file line by line and concatenating each line to a global string variable. It then removes all space and tab characters from the resultant string, and then it "expects" terminals one by one until the entire input text is parsed. It does this according to the given Context Free Grammar below. If it expects a terminal and does not see a matching one, it prints SYNTAX ERROR !.
 
 Let CFG G (V, SIGMA, R, S)
+
 where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
 SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
 R = {
