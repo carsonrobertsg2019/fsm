@@ -70,6 +70,45 @@ string peek(int i);
 void syntax_error();
 int find(vector<string> list, string str);
 
+int stateIsUnique(string state1)
+{
+	for (int i = 0; i < listOfStates.size(); i++)
+	{
+		if (listOfStates[i]->stateName == state1)
+			return i;
+	}
+	return -1;
+}
+
+int processFirstState(string state1)
+{
+	//1. check if parsed original state is unique
+	int stateIndex = stateIsUnique(state1);
+	if (stateIndex == -1)
+	{
+		//1.a if unique, add a stateNode to listOfStates (index is size-1)
+		stateNode* newStateNode = new stateNode;
+		newStateNode->stateName = state1;
+		listOfStates.push_back(newStateNode);
+		stateIndex = listOfStates.size() - 1;
+	}
+	return stateIndex;
+}
+
+void updateTransition(string input, string state2, int i)
+{
+	transitionNode* newTransitionNode = new transitionNode;
+	newTransitionNode->transitionInput = input;
+	newTransitionNode->transitionStateName = state2;
+	listOfStates[i]->listOfTransitions.push_back(newTransitionNode);
+}
+
+void updateListOfStates(string state1, string input, string state2)
+{
+	int i = processFirstState(state1);
+	updateTransition(input, state2, i);
+}
+
 void parse_dfa()
 {
 	//dfa -> q sigma delta start_state f
@@ -216,32 +255,34 @@ void validateDeltaInput(pairToRemoveTemp* temp)
 void parse_transition()
 {
 	pairToRemoveTemp* temp = new pairToRemoveTemp;
-	string str;
+	
 
 	//transition->DELTA LPAREN primary COMMA,
 	expect("DELTA");
 	expect("(");
-	str = parse_primary();
-	temp->stateNameToRemove = str;
-	if (find(states, str) == -1)
+	string state1 = parse_primary();
+	temp->stateNameToRemove = state1;
+	if (find(states, state1) == -1)
 	{
 		syntax_error();
 	}
 	expect(",");
-	str = parse_primary();
-	temp->inputToRemove = str;
-	if (find(inputAlphabet, str) == -1)
+	string input = parse_primary();
+	temp->inputToRemove = input;
+	if (find(inputAlphabet, input) == -1)
 	{
 		syntax_error();
 	}
 	expect(")");
 	expect("=");
-	if (find(states, parse_primary()) == -1)
+	string state2 = parse_primary();
+	if (find(states, state2) == -1)
 	{
 		syntax_error();
 	}
 
 	validateDeltaInput(temp);
+	updateListOfStates(state1, input, state2);
 }
 
 string parse_primary()
@@ -261,23 +302,23 @@ void clearWhiteSpace()
 bool idIsReservedWord(string in)
 {
 	return ((in.substr(0, 1) == "Q" && in.size() == 1) ||
-		(in.substr(0, 5) == "SIGMA" && in.size() == 5) ||
-		(in.substr(0, 5) == "DELTA" && in.size() == 5) ||
-		(in == "START_STATE") ||
-		(in.substr(0, 1) == "F" && in.size() == 1) ||
-		(in.substr(0, 1) == "=" && in.size() == 1) ||
-		(in.substr(0, 1) == "{" && in.size() == 1) || 
-		(in.substr(0, 1) == "}" && in.size() == 1) || 
-		(in.substr(0, 1) == ";" && in.size() == 1) ||
-		(in.substr(0, 1) == "(" && in.size() == 1) || 
-		(in.substr(0, 1) == ")" && in.size() == 1));
+			(in.substr(0, 5) == "SIGMA" && in.size() == 5) ||
+			(in.substr(0, 5) == "DELTA" && in.size() == 5) ||
+			(in == "START_STATE") ||
+			(in.substr(0, 1) == "F" && in.size() == 1) ||
+			(in.substr(0, 1) == "=" && in.size() == 1) ||
+			(in.substr(0, 1) == "{" && in.size() == 1) || 
+			(in.substr(0, 1) == "}" && in.size() == 1) || 
+			(in.substr(0, 1) == ";" && in.size() == 1) ||
+			(in.substr(0, 1) == "(" && in.size() == 1) || 
+			(in.substr(0, 1) == ")" && in.size() == 1));
 }
 
 bool shouldStop(int i)
 {
 	return (dfaDef[i] == '}' || dfaDef[i] == ';' ||
-		dfaDef[i] == ',' || dfaDef[i] == ')' ||
-		i == dfaDef.size());
+			dfaDef[i] == ',' || dfaDef[i] == ')' ||
+			i == dfaDef.size());
 }
 
 string expect(string expected)
@@ -328,6 +369,7 @@ void showAllStates()
 	{
 		cout << states[i] << " ";
 	}
+	cout << endl << endl;
 }
 
 void syntax_error()
@@ -375,12 +417,12 @@ int main()
 		*		SIGMA = {Q, SIGMA, DELTA, START_STATE, F, EQUAL, LBRACE, RBRACE, SEMICOLON, LPAREN, RPAREN, ID, NUM},
 		*		R = {
 		* 
-		*		dfa		-> q sigma delta start_state f,
-		*		q		-> Q EQUAL LBRACE list LBRACE SEMICOLON,
+		*		dfa			-> q sigma delta start_state f,
+		*		q			-> Q EQUAL LBRACE list LBRACE SEMICOLON,
 		*		sigma		-> SIGMA EQUAL LBRACE list RBRACE SEMICOLON,
 		*		delta		-> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON,
 		*		start_state	-> START_STATE EQUAL primary SEMICOLON,
-		*		f		-> F EQUAL LBRACE list RBRACE SEMICOLON,
+		*		f			-> F EQUAL LBRACE list RBRACE SEMICOLON,
 		*		list		-> primary COMMA list || primary,
 		*		transitions	-> transiton COMMA transitions || transition,
 		*		transition	-> DELTA LPAREN primary COMMA,
@@ -391,4 +433,21 @@ int main()
     }
 	cout <<  endl << "Q = ";
 	showAllStates();
+
+	//debugging to show that dfa representation is printable
+	for (int i = 0; i < listOfStates.size(); i++)
+	{
+		cout << "State " << listOfStates[i]->stateName << " transitions to ";
+		for (int j = 0; j < listOfStates[i]->listOfTransitions.size(); j++)
+		{
+			if (j == listOfStates[i]->listOfTransitions.size() - 1)
+			{
+				cout << "and " << listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << listOfStates[i]->listOfTransitions[j]->transitionInput << "." << endl;
+			}
+			else
+			{
+				cout << listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << listOfStates[i]->listOfTransitions[j]->transitionInput << ", ";
+			}
+		}
+	}
 }
