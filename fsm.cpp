@@ -2,75 +2,14 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "dfaparser.h"
 using namespace std;
 
-string dfaDef = "";
+//************************************************************************************************************************************************************************************************
+//DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING DFA PARSING
+//************************************************************************************************************************************************************************************************
 
-vector<string> states; 
-/*
- * synonomous with contents of Q of input DFA
- * used to make sure no states not in Q are 
- * mentioned in sigma, delta, start state, or f
- */
-vector<string> inputAlphabet;
-/*
- * synonomous with contents of sigma of input DFA
- * used to make sure no characters not in sigma are
- * mentioned in delta
- */
-
-struct statesXinputNode
-{
-	string stateName;
-	string input;
-};
-vector<statesXinputNode*> statesXinput;
-
-struct transitionNode
-{
-	string transitionStateName;
-	string transitionInput;
-};
-
-struct stateNode
-{
-	string stateName;
-	vector<transitionNode*> listOfTransitions;
-};
-vector<stateNode*> listOfStates;
-
-/* this will represent a dfa, similarly to an adjacency list does a graph, have not implemented yet
- * 
- * listOfStates is a vector of pointers to stateNodes
- * 
- * a stateNode is a struct containing two things, a stateName, and a listOfTransitions
- * 
- * stateName is represents the name of a state
- * 
- * listOfTransitions is a vector of pointers to transitionNodes
- * 
- * a transitionNode is a struct containing a transitionStateName, and a transitionInput.
- * 
- * transitionStateName represents the name of the state being transitioned to from the state represented by stateName
- * transitionInput represents the input that is taken on the corresponding transition.
- */
-
-void parse_dfa();
-void parse_q();
-void parse_sigma();
-void parse_delta();
-void parse_start_state();
-void parse_f();
-void parse_list(string listType);
-void parse_transitions();
-void parse_transition();
-string parse_primary();
-string expect(string expected);
-string peek(int i);
-void syntax_error();
-int find(vector<string> list, string str);
-
-int stateIsUnique(string state1)
+int DfaParser::findStateInListOfStates(string state1)
 {
 	for (int i = 0; i < listOfStates.size(); i++)
 	{
@@ -80,22 +19,7 @@ int stateIsUnique(string state1)
 	return -1;
 }
 
-int processFirstState(string state1)
-{
-	//1. check if parsed original state is unique
-	int stateIndex = stateIsUnique(state1);
-	if (stateIndex == -1)
-	{
-		//1.a if unique, add a stateNode to listOfStates (index is size-1)
-		stateNode* newStateNode = new stateNode;
-		newStateNode->stateName = state1;
-		listOfStates.push_back(newStateNode);
-		stateIndex = listOfStates.size() - 1;
-	}
-	return stateIndex;
-}
-
-void updateTransition(string input, string state2, int i)
+void DfaParser::updateTransition(string input, string state2, int i)
 {
 	transitionNode* newTransitionNode = new transitionNode;
 	newTransitionNode->transitionInput = input;
@@ -103,23 +27,38 @@ void updateTransition(string input, string state2, int i)
 	listOfStates[i]->listOfTransitions.push_back(newTransitionNode);
 }
 
-void updateListOfStates(string state1, string input, string state2)
+void DfaParser::updateListOfStates(string state1, string input, string state2)
 {
-	int i = processFirstState(state1);
+	int i = findStateInListOfStates(state1);
 	updateTransition(input, state2, i);
 }
 
-void parse_dfa()
+void DfaParser::fill_out_states_x_input()
+{
+	for (int i = 0; i < states.size(); i++)
+	{
+		for (int j = 0; j < inputAlphabet.size(); j++)
+		{
+			states_x_input_node* newNode = new states_x_input_node;
+			newNode->stateName = states[i];
+			newNode->input = inputAlphabet[j];
+			states_x_input.push_back(newNode);
+		}
+	}
+}
+
+void DfaParser::parse_dfa()
 {
 	//dfa -> q sigma delta start_state f
 	parse_q();
 	parse_sigma();
+	fill_out_states_x_input();
 	parse_delta();
 	parse_start_state();
 	parse_f();
 }
 
-void parse_q()
+void DfaParser::parse_q()
 {
 	//q -> Q EQUAL LBRACE list LBRACE SEMICOLON
 	expect("Q");
@@ -130,7 +69,7 @@ void parse_q()
 	expect(";");
 }
 
-void parse_sigma()
+void DfaParser::parse_sigma()
 {
 	//sigma -> SIGMA EQUAL LBRACE list RBRACE SEMICOLON
 	expect("SIGMA");
@@ -141,19 +80,9 @@ void parse_sigma()
 	expect(";");
 }
 
-void parse_delta()
+void DfaParser::parse_delta()
 {
 	//delta -> DELTA EQUAL LBRACE transitions RBRACE SEMICOLON
-	for (int i = 0; i < states.size(); i++)
-	{
-		for (int j = 0; j < inputAlphabet.size(); j++)
-		{
-			statesXinputNode* newNode = new statesXinputNode;
-			newNode->stateName = states[i];
-			newNode->input = inputAlphabet[j];
-			statesXinput.push_back(newNode);
-		}
-	}
 	expect("DELTA");
 	expect("=");
 	expect("{");
@@ -162,30 +91,42 @@ void parse_delta()
 	expect(";");
 }
 
-void parse_start_state()
+void DfaParser::parse_start_state()
 {
 	//start_state -> START_STATE EQUAL primary SEMICOLON
 	expect("START_STATE");
 	expect("=");
-	if (find(states, parse_primary()) == -1)
+	string temp = parse_primary();
+	if (find(states, temp) == -1)
 	{
 		syntax_error();
+	}
+	else
+	{
+		startState = temp;
 	}
 	expect(";");
 }
 
-void parse_f()
+void DfaParser::parse_f()
 {
 	//f	-> F EQUAL LBRACE list RBRACE SEMICOLON
 	expect("F");
 	expect("=");
 	expect("{");
-	parse_list("F");
+	if (dfaDef != "};")
+	{
+		parse_list("F");
+	}
 	expect("}");
 	expect(";");
+	if (dfaDef.size() != 0)
+	{
+		syntax_error();
+	}
 }
 
-void parse_list(string listType)
+void DfaParser::parse_list(string listType)
 {
 	//list -> primary COMMA list || primary
 	string newPrimary = parse_primary();
@@ -198,10 +139,18 @@ void parse_list(string listType)
 	}
 	else if (listType == "SIGMA")
 	{
-		inputAlphabet.push_back(newPrimary);
+		if (newPrimary.size() == 1)
+		{
+			inputAlphabet.push_back(newPrimary);
+		}
+		else
+		{
+			syntax_error();
+		}
 	}
 	else if (listType == "F")
 	{
+		finalStates.push_back(newPrimary);
 		if (find(states, newPrimary) == -1)
 		{
 			syntax_error();
@@ -214,7 +163,7 @@ void parse_list(string listType)
 	}
 }
 
-void parse_transitions()
+void DfaParser::parse_transitions()
 {
 	//transitions -> transiton COMMA transitions || transition
 	parse_transition();
@@ -223,27 +172,22 @@ void parse_transitions()
 		expect(",");
 		parse_transitions();
 	}
-	if (!statesXinput.empty())
+	if (!states_x_input.empty())
 	{
 		syntax_error();
 	}
 }
 
-struct pairToRemoveTemp
-{
-	string stateNameToRemove;
-	string inputToRemove;
-};
 
-void validateDeltaInput(pairToRemoveTemp* temp)
+void DfaParser::validateDeltaInput(pairToRemove* temp)
 {
 	bool syntaxError = true;
-	for (int i = 0; i < statesXinput.size(); i++)
+	for (int i = 0; i < states_x_input.size(); i++)
 	{
-		if (statesXinput[i]->stateName == temp->stateNameToRemove && statesXinput[i]->input == temp->inputToRemove)
+		if (states_x_input[i]->stateName == temp->stateNameToRemove && states_x_input[i]->input == temp->inputToRemove)
 		{
 			syntaxError = false;
-			statesXinput.erase(statesXinput.begin() + i);
+			states_x_input.erase(states_x_input.begin() + i);
 		}
 	}
 	if (syntaxError)
@@ -252,11 +196,9 @@ void validateDeltaInput(pairToRemoveTemp* temp)
 	}
 }
 
-void parse_transition()
+void DfaParser::parse_transition()
 {
-	pairToRemoveTemp* temp = new pairToRemoveTemp;
-	
-
+	pairToRemove* temp = new pairToRemove;
 	//transition->DELTA LPAREN primary COMMA,
 	expect("DELTA");
 	expect("(");
@@ -285,13 +227,13 @@ void parse_transition()
 	updateListOfStates(state1, input, state2);
 }
 
-string parse_primary()
+string DfaParser::parse_primary()
 {
 	//primary -> ID || NUM 
-	return expect("ID_OR_NUM");
+	return expect("ID");
 }
 
-void clearWhiteSpace()
+void DfaParser::clearWhiteSpace()
 {
 	std::string::iterator end_pos = remove(dfaDef.begin(), dfaDef.end(), ' ');
 	dfaDef.erase(end_pos, dfaDef.end());
@@ -299,38 +241,17 @@ void clearWhiteSpace()
 	dfaDef.erase(end_pos, dfaDef.end());
 }
 
-bool idIsReservedWord(string in)
-{
-	return ((in.substr(0, 1) == "Q" && in.size() == 1) ||
-			(in.substr(0, 5) == "SIGMA" && in.size() == 5) ||
-			(in.substr(0, 5) == "DELTA" && in.size() == 5) ||
-			(in == "START_STATE") ||
-			(in.substr(0, 1) == "F" && in.size() == 1) ||
-			(in.substr(0, 1) == "=" && in.size() == 1) ||
-			(in.substr(0, 1) == "{" && in.size() == 1) || 
-			(in.substr(0, 1) == "}" && in.size() == 1) || 
-			(in.substr(0, 1) == ";" && in.size() == 1) ||
-			(in.substr(0, 1) == "(" && in.size() == 1) || 
-			(in.substr(0, 1) == ")" && in.size() == 1));
-}
-
-bool shouldStop(int i)
+bool DfaParser::shouldStop(int i)
 {
 	return (dfaDef[i] == '}' || dfaDef[i] == ';' ||
 			dfaDef[i] == ',' || dfaDef[i] == ')' ||
 			i == dfaDef.size());
 }
 
-string expect(string expected)
+string DfaParser::expect(string expected)
 {
-	cout << "now expecting " << expected << endl;
-	cout << dfaDef << endl;
-	if (expected == "ID_OR_NUM")
+	if (expected == "ID")
 	{
-		if (idIsReservedWord(dfaDef.substr(0, 11)))
-		{
-			syntax_error();
-		}
 		int i = 0;
 		while (true)
 		{
@@ -363,27 +284,18 @@ string expect(string expected)
 	}
 }
 
-void showAllStates()
-{
-	for (int i = 0; i < states.size(); i++)
-	{
-		cout << states[i] << " ";
-	}
-	cout << endl << endl;
-}
-
-void syntax_error()
+void DfaParser::syntax_error()
 {
 	cout << "SYNTAX ERROR !";
 	exit(1);
 }
 
-string peek(int i)
+string DfaParser::peek(int i)
 {
 	return dfaDef.substr(0, i);
 }
 
-int find(vector<string> list, string str)
+int DfaParser::find(vector<string> list, string str)
 {
 	for (int i = 0; i < list.size(); i++)
 	{
@@ -395,22 +307,98 @@ int find(vector<string> list, string str)
 	return -1;
 }
 
+//debugging
+void DfaParser::printQ(DfaParser dfaparser)
+{
+	cout << "Q = { ";
+	for (int i = 0; i < dfaparser.states.size(); i++)
+	{
+		cout << dfaparser.states[i] << " ";
+	}
+	cout << "}" << endl;
+}
+
+void DfaParser::printSig(DfaParser dfaparser)
+{
+	cout << "Sigma = { ";
+	for (int i = 0; i < dfaparser.inputAlphabet.size(); i++)
+	{
+		cout << dfaparser.inputAlphabet[i] << " ";
+	}
+	cout << "}" << endl;
+}
+
+void DfaParser::printDelta(DfaParser dfaparser)
+{
+	cout << "Transitions: " << endl;
+	for (int i = 0; i < dfaparser.listOfStates.size(); i++)
+	{
+		cout << "State " << dfaparser.listOfStates[i]->stateName << " transitions to ";
+		for (int j = 0; j < dfaparser.listOfStates[i]->listOfTransitions.size(); j++)
+		{
+			if (j == dfaparser.listOfStates[i]->listOfTransitions.size() - 1)
+			{
+				cout << "and " << dfaparser.listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << dfaparser.listOfStates[i]->listOfTransitions[j]->transitionInput << "." << endl;
+			}
+			else
+			{
+				cout << dfaparser.listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << dfaparser.listOfStates[i]->listOfTransitions[j]->transitionInput << ", ";
+			}
+		}
+	}
+}
+
+void DfaParser::printSS(DfaParser dfaparser)
+{
+	cout << "start state = " << dfaparser.startState << endl;
+}
+
+void DfaParser::printF(DfaParser dfaparser)
+{
+	cout << "F = { ";
+	for (int i = 0; i < dfaparser.finalStates.size(); i++)
+	{
+		cout << dfaparser.finalStates[i] << " ";
+	}
+	cout << "}" << endl;
+}
+
+void DfaParser::debug(DfaParser dfaparser, string type)
+{
+	if (type == "PARSING")
+	{
+		printQ(dfaparser);
+		printSig(dfaparser);
+		printDelta(dfaparser);
+		printSS(dfaparser);
+		printF(dfaparser);
+	}
+	else if (type == "INPUT_STRING")
+	{
+
+	}
+	else cout << "incorrect debug type";
+}
+
 int main()
 {
+	bool debugging = true;
 	//read dfa.txt
     fstream newfile;
     newfile.open("dfa.txt", ios::in);
+	DfaParser dfaparser;
     if (newfile.is_open()) 
     {
+		dfaparser.dfaDef = "";
 		//concatenate each line of dfa.txt to dfaDef, ignoring all newlines in text file
         string line;
         while (getline(newfile, line)) 
         {
-            dfaDef += line;
+			dfaparser.dfaDef += line;
         }
-		clearWhiteSpace(); //remove spaces and tabs
+		dfaparser.clearWhiteSpace(); //remove spaces and tabs
 
-		parse_dfa();
+		dfaparser.parse_dfa();
 		/*
 		* parse dfa according to the CFG G (V, SIGMA, R, S)
 		* where V = {dfa, q, sigma, delta, start_state, f, list, transitions, transition, primary},
@@ -426,28 +414,74 @@ int main()
 		*		list		-> primary COMMA list || primary,
 		*		transitions	-> transiton COMMA transitions || transition,
 		*		transition	-> DELTA LPAREN primary COMMA,
-		*		primary		-> ID || NUM }
+		*		primary		-> ID}
 		* 
 		*		S = dfa
 		*/
     }
-	cout <<  endl << "Q = ";
-	showAllStates();
 
-	//debugging to show that dfa representation is printable
-	for (int i = 0; i < listOfStates.size(); i++)
+	if (debugging)
 	{
-		cout << "State " << listOfStates[i]->stateName << " transitions to ";
-		for (int j = 0; j < listOfStates[i]->listOfTransitions.size(); j++)
-		{
-			if (j == listOfStates[i]->listOfTransitions.size() - 1)
-			{
-				cout << "and " << listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << listOfStates[i]->listOfTransitions[j]->transitionInput << "." << endl;
-			}
-			else
-			{
-				cout << listOfStates[i]->listOfTransitions[j]->transitionStateName << " on input " << listOfStates[i]->listOfTransitions[j]->transitionInput << ", ";
-			}
+		dfaparser.debug(dfaparser, "PARSING");
+	}
+
+	char userIn = 0;
+
+	while (userIn != 'q')
+	{
+		cout << endl << "Options: " << endl;
+		cout << "W: run the DFA on an input string w" << endl;
+		cout << "Q: quit" << endl;
+		cin >> userIn;
+		userIn = tolower(userIn);
+
+		switch (userIn) {
+		case 'w':
+			cout << "run M on w";
+			break;
+		case 'q':
+			cout << "Goodbye.";
+			break;
+		default:
+			cout << "Invalid input, please try again.";
 		}
 	}
+
+	/*
+	i just think this looks neat:
+
+						           .='  ' .`/,/!(=)Zm.
+					 .._,,._..  ,-`- `,\ ` -` -`\\7//WW.
+				,v=~/.-,-\- -!|V-s.)iT-|s|\-.'   `///mK%.
+			  v!`i!-.e]-g`bT/i(/[=.Z/m)K(YNYi..   /-]i44M.
+			v`/,`|v]-DvLcfZ/eV/iDLN\D/ZK@%8W[Z..   `/d!Z8m
+		   //,c\(2(X/NYNY8]ZZ/bZd\()/\7WY%WKKW)   -'|(][%4.
+		 ,\\i\c(e)WX@WKKZKDKWMZ8(b5/ZK8]Z7%ffVM,   -.Y!bNMi
+		 /-iit5N)KWG%%8%%%%W8%ZWM(8YZvD)XN(@.  [   \]!/GXW[
+		/ ))G8\NMN%W%%%%%%%%%%8KK@WZKYK*ZG5KMi,-   vi[NZGM[
+	   i\!(44Y8K%8%%%**~YZYZ@%%%%%4KWZ/PKN)ZDZ7   c=//WZK%!
+	  ,\v\YtMZW8W%%f`,`.t/bNZZK%%W%%ZXb*K(K5DZ   -c\\/KM48
+	  -|c5PbM4DDW%f  v./c\[tMY8W%PMW%D@KW)Gbf   -/(=ZZKM8[
+	  2(N8YXWK85@K   -'c|K4/KKK%@  V%@@WD8e~  .//ct)8ZK%8`
+	  =)b%]Nd)@KM[  !'\cG!iWYK%%|   !M@KZf    -c\))ZDKW%`
+	  YYKWZGNM4/Pb  '-VscP4]b@W%     'Mf`   -L\///KM(%W!
+	  !KKW4ZK/W7)Z. '/cttbY)DKW%     -`  .',\v)K(5KW%%f
+	  'W)KWKZZg)Z2/,!/L(-DYYb54%  ,,`, -\-/v(((KK5WW%f
+	   \M4NDDKZZ(e!/\7vNTtZd)8\Mi!\-,-/i-v((tKNGN%W%%
+	   'M8M88(Zd))///((|D\tDY\\KK-`/-i(=)KtNNN@W%%%@%[
+		!8%@KW5KKN4///s(\Pd!ROBY8/=2(/4ZdzKD%K%%%M8@%%
+		 '%%%W%dGNtPK(c\/2\[Z(ttNYZ2NZW8W8K%%%%YKM%M%%.
+		   *%%W%GW5@/%!e]_tZdY()v)ZXMZW%W%%%*5Y]K%ZK%8[
+			'*%%%%8%8WK\)[/ZmZ/Zi]!/M%%%%@f\ \Y/NNMK%%!
+			  'VM%%%%W%WN5Z/Gt5/b)((cV@f`  - |cZbMKW%%|
+				 'V*M%%%WZ/ZG\t5((+)L\'-,,/  -)X(NWW%%
+					  `~`MZ/DZGNZG5(((\,    ,t\\Z)KW%@
+						 'M8K%8GN8\5(5///]i!v\K)85W%%f
+						   YWWKKKKWZ8G54X/GGMeK@WM8%@
+							!M8%8%48WG@KWYbW%WWW%%%@
+							  VM%WKWK%8K%%8WWWW%%%@`
+								~*%%%%%%W%%%%%%%@~
+								   ~*MM%%%%%%@f`
+									   '''''
+	*/
 }
