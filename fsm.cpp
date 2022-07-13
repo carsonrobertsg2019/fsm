@@ -475,19 +475,19 @@ int main()
 		dfaparser.debug(dfaparser, "PARSING");
 	}
 
-	char userIn = 0;
+	string userIn = "";
 
-	while (userIn != 'q')
+	while (userIn != "q")
 	{
 		cout << endl << "Options: " << endl;
 		cout << "W: run the DFA on an input string w" << endl;
 		cout << "Q: quit" << endl;
 		cin >> userIn;
-		userIn = tolower(userIn);
+		userIn = tolower(userIn[0]);
 
 		string w;
-		switch (userIn) {
-		case 'w':
+		if (userIn == "w")
+		{
 			cout << "run M on w" << endl;
 			execution executor;
 			cin >> w;
@@ -495,12 +495,14 @@ int main()
 				cout << endl << "M accepts w";
 			else
 				cout << endl << "M does not accept w";
-			break;
-		case 'q':
+		}
+		else if(userIn == "q")
+		{
 			cout << "Goodbye.";
-			break;
-		default:
-			cout << "Invalid input, please try again.";
+		}
+		else
+		{
+			cout << "invalid input, try again";
 		}
 	}
 }
