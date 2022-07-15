@@ -6,7 +6,7 @@
 #include "dfaparser.h"
 using namespace std;
 
-class execution
+class dfaexecution
 {
 public:
 	int findCurrentStateInList(DfaParser M, string w_ch);

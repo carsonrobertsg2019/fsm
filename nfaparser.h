@@ -1,19 +1,11 @@
-#ifndef __DFAPARSER_H__
-#define __DFAPARSER_H__
-
+#ifndef __NFAPARSER_H__
+#define __NFAPARSER_H__
 #include <iostream>
 #include <vector>
-using namespace std;
 
-class DfaParser
+class NfaParser
 {
 public:
-	struct states_x_input_node
-	{
-		string stateName;
-		string input;
-	};
-
 	struct transitionNode
 	{
 		string transitionStateName;
@@ -26,13 +18,8 @@ public:
 		vector<transitionNode*> listOfTransitions;
 	};
 
-	struct pairToRemove
-	{
-		string stateNameToRemove;
-		string inputToRemove;
-	};
-
-	void parse_dfa();
+	string nfaDef;
+	void parse_nfa();
 	void parse_q();
 	void parse_sigma();
 	void parse_delta();
@@ -42,23 +29,19 @@ public:
 	void parse_transitions();
 	void parse_transition();
 	string parse_primary();
-	string expect(string expected);
+	bool shouldStop(int i);
 	string peek(int i);
+	string expect(string expected);
 	void syntax_error();
+	void clearWhiteSpace();
 	int find(vector<string> list, string str);
 	int findStateInListOfStates(string state1);
 	void updateTransition(string input, string state2, int i);
 	void updateListOfStates(string state1, string input, string state2);
-	void fill_out_states_x_input();
-	void validateDeltaInput(pairToRemove* temp);
-	void clearWhiteSpace();
-	bool shouldStop(int i);
 	vector<string> states;
 	vector<string> inputAlphabet;
 	vector<string> finalStates;
-	vector<states_x_input_node*> states_x_input;
 	vector<stateNode*> listOfStates;
-	string startState;
-	string dfaDef = "";
 };
+
 #endif
