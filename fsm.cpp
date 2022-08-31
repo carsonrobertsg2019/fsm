@@ -669,6 +669,72 @@ vector<int> nfaexecution::findAllTransitions(NfaParser M, int i, string w_ch)
 	return temp;
 }
 
+vector<string> nfaexecution::checkEpsilonTransitions(vector<string> currentStates, NfaParser M)
+{
+	string nextState = "";
+	bool changed = true;
+	while (changed)
+	{
+		changed = false;
+		for (int k = 0; k < currentStates.size(); k++)
+		{
+			int i = findCurrentStateInList(M, currentStates[k]);
+			vector<int> indicesOfEpTrans;
+			indicesOfEpTrans = findAllTransitions(M, i, "$");
+
+			for (int j = 0; j < indicesOfEpTrans.size(); j++)
+			{
+				nextState = M.listOfStates[i]->listOfTransitions[indicesOfEpTrans[j]]->transitionStateName;
+				bool unique = true;
+				for (int i = 0; i < currentStates.size(); i++)
+				{
+					if (currentStates[i] == nextState)
+					{
+						unique = false;
+					}
+				}
+				if (unique)
+				{
+					currentStates.push_back(nextState);
+					changed = true;
+				}
+			}
+		}
+	}
+	return currentStates;
+}
+
+vector<string> nfaexecution::readInputCharacter(vector<string> currentStates, string w, NfaParser M)
+{
+	string nextState = "";
+	string w_ch = w.substr(0, 1);
+	if (findInAlphabet(M, w_ch) == -1)
+	{
+		cout << "wrong input";
+		exit(1);
+	}
+	else
+	{
+		vector<string> originalCurrentStates = currentStates;
+		vector<string> newCurrentStates;
+		for (int k = 0; k < originalCurrentStates.size(); k++)
+		{
+			string tempLol = originalCurrentStates[k];
+			int i = findCurrentStateInList(M, tempLol);
+			vector<int> indicesOfChTrans;
+			indicesOfChTrans = findAllTransitions(M, i, w_ch);
+			for (int j = 0; j < indicesOfChTrans.size(); j++)
+			{
+				nextState = M.listOfStates[i]->listOfTransitions[indicesOfChTrans[j]]->transitionStateName;
+				newCurrentStates.push_back(nextState);
+			}
+		}
+		currentStates = newCurrentStates;
+	}
+	return currentStates;
+}
+
+
 bool nfaexecution::startExecution(string w, NfaParser M)
 {
 	vector<string> currentStates;
@@ -677,103 +743,27 @@ bool nfaexecution::startExecution(string w, NfaParser M)
 	while (w.length() != 0)
 	{
 		//check for epsilon transitions until there are no more epsilon transitions
-		bool changed = true;
-		while (changed)
-		{
-			changed = false;
-			for (int k = 0; k < currentStates.size(); k++)
-			{
-				int i = findCurrentStateInList(M, currentStates[k]);
-				vector<int> indicesOfEpTrans;
-				indicesOfEpTrans = findAllTransitions(M, i, "$");
-
-				for (int j = 0; j < indicesOfEpTrans.size(); j++)
-				{
-					nextState = M.listOfStates[i]->listOfTransitions[indicesOfEpTrans[j]]->transitionStateName;
-					bool unique = true;
-					for (int i = 0; i < currentStates.size(); i++)
-					{
-						if (currentStates[i] == nextState)
-						{
-							unique = false;
-						}
-					}
-					if (unique)
-					{
-						currentStates.push_back(nextState);
-						changed = true;
-					}
-				}
-			}
-		}
+		currentStates = checkEpsilonTransitions(currentStates, M);
 		//now read a character from the input
-		string w_ch = w.substr(0, 1);
-		if (findInAlphabet(M, w_ch) == -1)
-		{
-			return false;
-		}
-		else
-		{
-			w = w.substr(1, w.length());
-			for (int k = 0; k < currentStates.size(); k++)
-			{
-				string tempLol = currentStates[k];
-				int i = findCurrentStateInList(M, tempLol);
-				vector<int> indicesOfChTrans;
-				indicesOfChTrans = findAllTransitions(M, i, w_ch);
-				for (int j = 0; j < indicesOfChTrans.size(); j++)
-				{
-					nextState = M.listOfStates[i]->listOfTransitions[indicesOfChTrans[j]]->transitionStateName;
-					currentStates.push_back(nextState);
-				}
-				/*
-				*/
-			}
-		}
-		/*
-		* sort(currentStates.begin(), currentStates.end());
+		currentStates = readInputCharacter(currentStates, w, M);
+		w = w.substr(1, w.length());
 		currentStates.erase(unique(currentStates.begin(), currentStates.end()), currentStates.end());
-		*/
-		w = "";
 	}
+	//check one more time before bed
+	currentStates = checkEpsilonTransitions(currentStates, M);
+	//sort so it looks pretty
+	sort(currentStates.begin(), currentStates.end());
+	currentStates.erase(unique(currentStates.begin(), currentStates.end()), currentStates.end());
 
 	for (int i = 0; i < currentStates.size(); i++)
 	{
-		cout << currentStates[i] << " ";
-	}
-	cout << endl;
-	return true;
-}
-
-/*
-bool dfaexecution::startExecution(string w, DfaParser M)
-{
-	string currentState = M.startState;
-	string nextState = "";
-	while (w.length() != 0)
-	{
-		string w_ch = w.substr(0, 1);
-		w = w.substr(1, w.length());
-		int i = findCurrentStateInList(M, currentState);
-		int j = findTransitionInList(M, i, w_ch);
-		if (i == -1 || j == -1)
-		{
-			cout << "invalid input string";
-			exit(-1);
-		}
-		currentState = M.listOfStates[i]->listOfTransitions[j]->transitionStateName;
-	}
-
-	for (int i = 0; i < M.finalStates.size(); i++)
-	{
-		if (M.finalStates[i] == currentState)
+		if (std::find(M.finalStates.begin(), M.finalStates.end(), currentStates[i]) != M.finalStates.end())
 		{
 			return true;
 		}
 	}
 	return false;
 }
-*/
 
 int main()
 {
@@ -901,10 +891,14 @@ int main()
 						nfaexecution executor;
 						cin >> w;
 						executor.startExecution(w, nfaparser);
-						//if (executor.startExecution(w, dfaparser))
-						//	cout << "M accepts w" << endl;
-						//else
-						//	cout << "M does not accept w" << endl;
+						if (executor.startExecution(w, nfaparser))
+						{
+							cout << "M accepts w" << endl;
+						}
+						else
+						{
+							cout << "M does not accept w" << endl;
+						}
 					}
 					else if (userInNFA == "q")
 					{
@@ -974,6 +968,51 @@ int main()
 	//            @******%****(/##******%*****#**(******/#****#**#**/%
 	//             .%****&**(@    */****%*****%**( //***%*****#*%
 	//					              . .&/**%&@/
+
+	//                                                                ,&#@#
+	//                                              #              *(*(%****(*
+	//										     ,@#%#@@,        .%**%**%*****/
+	//                       . & *******@ * &*********************#(****%*******(
+	//	                   / (*****/ @(****(/*******************(*******%********/(
+	//          	    *********/*&***&@@&#(/*************@#((%@@#***/# * *********%
+	//      		.& **********(% ********************************(***(/**********/
+	// 		      .(************/#****/@/@@/**************&, %*********(#**********/
+	//		     &***************#****%,     /**********(,     #*/(***(, .(****&
+	//		    /****************%***(*      /**********(  ..   #(/*(*   *&%*
+	//		    ./***************&***/( @@@@@&**********#@@@@@@#**(
+	//            &*************(******@@@%(@****#@@(*****(% #/*****%
+	//               &*********#%*************/*%@@@@@@@@#***********%.
+	//                  #/****% %**************/@@@@@@@@@@******//***#.
+	//                     &#   (****/**%&********#@@@@/*******&(**%
+	//		                     .#***&%%%********************&%#&
+	//                	       .@##%@/**&*********#(*@@@(**%(@##/
+	//		                    (##&. ,/*****************&/*%   &&%#(
+	//          	          .&#%   ,&%******************#      (@%#%
+	//                       .%%*   .@#%/***************/,        @#&#&
+	//                       @%,   .&(%###&/***********(@         @%/%#%
+	//     **&               @%  ,#****(%#####&&#@((@%###(       ,&%/ %#/
+	//      @*&              @%.%**********#&###&%%@##%%,        ,&%( (##
+	//       /*(             .%%*************/&#&*@.*#*#          ,#%/&#&
+	//       %*#            &*/&#&******#***&#%(#&@#%%*#
+	//       #*#          ./****/@#%#****#%#%%*******%(/,
+	//     .**&*         ./********/@####&#%   .(%    (**%
+	//     #*/ #		&****************%/           (***#
+	//    @**%    .,.  &*****************/#     *     (****(
+	//   .**(    ,****/(*****%***********%%    ..   ,&*****(
+	//	 @**(  ,/***********(************((         /******%
+	//  ,@***%@*************(/***********#*#        #*****(/***%
+	//   %/**#***************@***********#*(%     (%******//****#
+	//   ***%*****************#**********(***@.  /********(/*****%
+	//    &&*******************#*********%*****(.&%*********#******%%/*****#*/@.
+	//    /********************&********/(******************# * ****/&****//#&*****%
+	//    &*******************/ &*********(*****************/ (********%/,,,,%*%,&/*%.
+	//     #******************#(**********/(******#********//******%*,,,,,,,(***%#(*
+	//      (*******************#***********(#***&# * *********&/***/#,,,,(%****%,/*
+	//         @********#******&*#****#*%*****&**/*#*****%****%**/(*********(&.
+	//            @******%****(/##******%*****#**(******/#****#**#**/%
+	//             .%****&**(@    */****%*****%**( //***%*****#*%
+	//					              . .&/**%&@/
+	//                                  robert ^
 
 	
 }
