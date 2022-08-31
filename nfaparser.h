@@ -42,6 +42,7 @@ public:
 	vector<string> inputAlphabet;
 	vector<string> finalStates;
 	vector<stateNode*> listOfStates;
+	string startState;
 };
 
 #endif

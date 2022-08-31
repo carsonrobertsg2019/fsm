@@ -10,7 +10,8 @@ class nfaexecution
 {
 public:
 	int findCurrentStateInList(NfaParser M, string w_ch);
-	int findTransitionInList(NfaParser M, int i, string w_ch);
+	vector<int> findAllTransitions(NfaParser M, int i, string w_ch);
+	int findInAlphabet(NfaParser M, string w_ch);
 	bool startExecution(string w, NfaParser M);
 };
 

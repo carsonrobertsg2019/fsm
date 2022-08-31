@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <algorithm>
 #include "dfaparser.h"
 #include "nfaparser.h"
 #include "executedfa.h"
@@ -447,6 +448,7 @@ void NfaParser::parse_start_state()
 		syntax_error();
 	}
 	expect(";");
+	startState = newPrimary;
 }
 
 void NfaParser::parse_f()
@@ -536,12 +538,9 @@ void NfaParser::parse_transition()
 	}
 	expect(",");
 	string input = parse_primary();
-	if (input != "epsilon")
+	if (find(inputAlphabet, input) == -1 && input != "$")
 	{
-		if (find(inputAlphabet, input) == -1)
-		{
-			syntax_error();
-		}
+		syntax_error();
 	}
 	expect(")");
 	expect("=");
@@ -628,6 +627,153 @@ int NfaParser::find(vector<string> list, string str)
 	}
 	return -1;
 }
+
+//***********************************************************************************************************************************************************************************
+//NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA COMPUTATION NFA
+//***********************************************************************************************************************************************************************************
+
+int nfaexecution::findInAlphabet(NfaParser M, string w_ch)
+{
+	for (int i = 0; i < M.inputAlphabet.size(); i++)
+	{
+		if (M.inputAlphabet[i] == w_ch)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+int nfaexecution::findCurrentStateInList(NfaParser M, string currentState)
+{
+	for (int i = 0; i < M.listOfStates.size(); i++)
+	{
+		if (currentState == M.listOfStates[i]->stateName)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+vector<int> nfaexecution::findAllTransitions(NfaParser M, int i, string w_ch)
+{
+	vector<int> temp;
+	for (int j = 0; j < M.listOfStates[i]->listOfTransitions.size(); j++)
+	{
+		if (w_ch == M.listOfStates[i]->listOfTransitions[j]->transitionInput)
+		{
+			temp.push_back(j);
+		}
+	}
+	return temp;
+}
+
+bool nfaexecution::startExecution(string w, NfaParser M)
+{
+	vector<string> currentStates;
+	currentStates.push_back(M.startState);
+	string nextState = "";
+	while (w.length() != 0)
+	{
+		//check for epsilon transitions until there are no more epsilon transitions
+		bool changed = true;
+		while (changed)
+		{
+			changed = false;
+			for (int k = 0; k < currentStates.size(); k++)
+			{
+				int i = findCurrentStateInList(M, currentStates[k]);
+				vector<int> indicesOfEpTrans;
+				indicesOfEpTrans = findAllTransitions(M, i, "$");
+
+				for (int j = 0; j < indicesOfEpTrans.size(); j++)
+				{
+					nextState = M.listOfStates[i]->listOfTransitions[indicesOfEpTrans[j]]->transitionStateName;
+					bool unique = true;
+					for (int i = 0; i < currentStates.size(); i++)
+					{
+						if (currentStates[i] == nextState)
+						{
+							unique = false;
+						}
+					}
+					if (unique)
+					{
+						currentStates.push_back(nextState);
+						changed = true;
+					}
+				}
+			}
+		}
+		//now read a character from the input
+		string w_ch = w.substr(0, 1);
+		if (findInAlphabet(M, w_ch) == -1)
+		{
+			return false;
+		}
+		else
+		{
+			w = w.substr(1, w.length());
+			for (int k = 0; k < currentStates.size(); k++)
+			{
+				string tempLol = currentStates[k];
+				int i = findCurrentStateInList(M, tempLol);
+				vector<int> indicesOfChTrans;
+				indicesOfChTrans = findAllTransitions(M, i, w_ch);
+				for (int j = 0; j < indicesOfChTrans.size(); j++)
+				{
+					nextState = M.listOfStates[i]->listOfTransitions[indicesOfChTrans[j]]->transitionStateName;
+					currentStates.push_back(nextState);
+				}
+				/*
+				*/
+			}
+		}
+		/*
+		* sort(currentStates.begin(), currentStates.end());
+		currentStates.erase(unique(currentStates.begin(), currentStates.end()), currentStates.end());
+		*/
+		w = "";
+	}
+
+	for (int i = 0; i < currentStates.size(); i++)
+	{
+		cout << currentStates[i] << " ";
+	}
+	cout << endl;
+	return true;
+}
+
+/*
+bool dfaexecution::startExecution(string w, DfaParser M)
+{
+	string currentState = M.startState;
+	string nextState = "";
+	while (w.length() != 0)
+	{
+		string w_ch = w.substr(0, 1);
+		w = w.substr(1, w.length());
+		int i = findCurrentStateInList(M, currentState);
+		int j = findTransitionInList(M, i, w_ch);
+		if (i == -1 || j == -1)
+		{
+			cout << "invalid input string";
+			exit(-1);
+		}
+		currentState = M.listOfStates[i]->listOfTransitions[j]->transitionStateName;
+	}
+
+	for (int i = 0; i < M.finalStates.size(); i++)
+	{
+		if (M.finalStates[i] == currentState)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+*/
 
 int main()
 {
@@ -739,15 +885,6 @@ int main()
 
 				nfaparser.parse_nfa();
 
-				//debugging
-				for (int i = 0; i < nfaparser.listOfStates.size(); i++)
-				{
-					for (int j = 0; j < nfaparser.listOfStates[i]->listOfTransitions.size(); j++)
-					{
-						cout << nfaparser.listOfStates[i]->stateName << " transitions on " << nfaparser.listOfStates[i]->listOfTransitions[j]->transitionInput << " to state " << nfaparser.listOfStates[i]->listOfTransitions[j]->transitionStateName << endl;
-					}
-				}
-
 				string userInNFA = "";
 				while (userInNFA != "q")
 				{
@@ -763,6 +900,7 @@ int main()
 						cout << "run M on w" << endl;
 						nfaexecution executor;
 						cin >> w;
+						executor.startExecution(w, nfaparser);
 						//if (executor.startExecution(w, dfaparser))
 						//	cout << "M accepts w" << endl;
 						//else
@@ -770,7 +908,7 @@ int main()
 					}
 					else if (userInNFA == "q")
 					{
-						cout << "done with this dfa." << endl;
+						cout << "done with this nfa." << endl;
 					}
 					else
 					{
