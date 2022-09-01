@@ -710,8 +710,8 @@ vector<string> nfaexecution::readInputCharacter(vector<string> currentStates, st
 	string w_ch = w.substr(0, 1);
 	if (findInAlphabet(M, w_ch) == -1)
 	{
-		cout << "wrong input";
-		exit(1);
+		currentStates.clear();
+		currentStates.push_back("USER_INPUT_INVALID");
 	}
 	else
 	{
@@ -735,17 +735,20 @@ vector<string> nfaexecution::readInputCharacter(vector<string> currentStates, st
 }
 
 
-bool nfaexecution::startExecution(string w, NfaParser M)
+string nfaexecution::startExecution(string w, NfaParser M)
 {
 	vector<string> currentStates;
 	currentStates.push_back(M.startState);
-	string nextState = "";
 	while (w.length() != 0)
 	{
 		//check for epsilon transitions until there are no more epsilon transitions
 		currentStates = checkEpsilonTransitions(currentStates, M);
 		//now read a character from the input
 		currentStates = readInputCharacter(currentStates, w, M);
+		if (currentStates.size() == 1 && currentStates[0] == "USER_INPUT_INVALID")
+		{
+			return currentStates[0];
+		}
 		w = w.substr(1, w.length());
 		currentStates.erase(unique(currentStates.begin(), currentStates.end()), currentStates.end());
 	}
@@ -759,10 +762,10 @@ bool nfaexecution::startExecution(string w, NfaParser M)
 	{
 		if (std::find(M.finalStates.begin(), M.finalStates.end(), currentStates[i]) != M.finalStates.end())
 		{
-			return true;
+			return "true";
 		}
 	}
-	return false;
+	return "false";
 }
 
 int main()
@@ -879,7 +882,7 @@ int main()
 				while (userInNFA != "q")
 				{
 					cout << "Options: " << endl;
-					cout << "W: run the DFA on an input string w" << endl;
+					cout << "W: run the NFA on an input string w" << endl;
 					cout << "Q: quit" << endl;
 					cin >> userInNFA;
 					userInNFA = tolower(userInNFA[0]);
@@ -890,14 +893,18 @@ int main()
 						cout << "run M on w" << endl;
 						nfaexecution executor;
 						cin >> w;
-						executor.startExecution(w, nfaparser);
-						if (executor.startExecution(w, nfaparser))
+						string result = executor.startExecution(w, nfaparser);
+						if (result == "true")
 						{
 							cout << "M accepts w" << endl;
 						}
-						else
+						else if (result == "false")
 						{
 							cout << "M does not accept w" << endl;
+						}
+						else
+						{
+							cout << "input string contained one or more characters not present in SIGMA" << endl;
 						}
 					}
 					else if (userInNFA == "q")
