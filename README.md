@@ -39,5 +39,4 @@ primary     -> ID || NUM
 
 }
 
-(this functionality is so far only implemented for dfas)
 After reading the input machine, the user is prompted to enter various strings, on which the program will then try to run the input DFA. If the string contains characters that are not found in Sigma, the input alphabet, the program will halt computation. Otherwise, the program will determine whether or not the computation is accepting based on the state on which it ends. If the ending state is in the set of final states, then the program determines that the computation is accepting. Otherwise, the program determines the computation is not accepting.
